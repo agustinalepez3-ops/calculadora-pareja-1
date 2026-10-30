@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7B2D55">
+<meta name="color-scheme" content="light dark">
+<title>Cuentas en pareja</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+/* Layout: una sola columna que se lee de arriba hacia abajo: sueldos, gastos, resultado.
+   Cada persona tiene su color (malbec y verde petróleo) en toda la página. */
+:root {
+  --bg: #F5F4F8;
+  --surface: #FFFFFF;
+  --surface-2: #EBE8F1;
+  --ink: #1D1A26;
+  --muted: #5F5A6E;
+  --line: #D8D4E2;
+  --a: #7B2D55;
+  --a-soft: #F0DCE6;
+  --b: #1F6F6B;
+  --b-soft: #D3EAE7;
+  --warn: #8F3A0C;
+  --warn-soft: #F8E4D6;
+  --font-display: 'Avenir Next', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15121A;
+    --surface: #1F1B27;
+    --surface-2: #2A2534;
+    --ink: #F0EDF6;
+    --muted: #A8A2B7;
+    --line: #3A3447;
+    --a: #E58DB6;
+    --a-soft: #3D2332;
+    --b: #5CC4BB;
+    --b-soft: #1B3634;
+    --warn: #F3AE7E;
+    --warn-soft: #3B2519;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15121A;
+  --surface: #1F1B27;
+  --surface-2: #2A2534;
+  --ink: #F0EDF6;
+  --muted: #A8A2B7;
+  --line: #3A3447;
+  --a: #E58DB6;
+  --a-soft: #3D2332;
+  --b: #5CC4BB;
+  --b-soft: #1B3634;
+  --warn: #F3AE7E;
+  --warn-soft: #3B2519;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 44rem; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
+section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.9rem, 6vw, 2.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 60ch; margin: 12px 0 0; }
+.hint { color: var(--muted); font-size: .92rem; margin: 0; max-width: 60ch; }
+.muted { color: var(--muted); }
+.small { font-size: .88rem; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
+.dot { width: 12px; height: 12px; border-radius: 50%; flex: none; display: inline-block; }
+.dot-a { background: var(--a); }
+.dot-b { background: var(--b); }
+
+.note { padding: 10px 14px; border-radius: 10px; background: var(--surface-2); font-size: .92rem; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+.note.warn { background: var(--warn-soft); color: var(--warn); }
+.linkbtn { background: none; border: 0; padding: 0; min-height: 32px; font: inherit; font-weight: 600; color: var(--a); text-decoration: underline; cursor: pointer; }
+
+/* Sueldos */
+.people { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 12px; }
+.person { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.pname { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.name-input {
+  flex: 1; min-width: 0;
+  font: 700 1.15rem var(--font-display);
+  color: var(--ink);
+  background: transparent;
+  border: 0; border-bottom: 1px dashed var(--line); border-radius: 0;
+  padding: 4px 0;
+}
+.name-input:focus { outline: 0; border-bottom-color: var(--ink); }
+.lbl { font-size: .85rem; color: var(--muted); }
+
+.money { display: flex; align-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding-left: 12px; min-width: 0; }
+.money > span { color: var(--muted); }
+.money input {
+  flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink);
+  font: inherit; font-variant-numeric: tabular-nums; text-align: right;
+  padding: 10px 12px 10px 6px; outline: 0;
+}
+.money:focus-within { border-color: var(--ink); }
+.field { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); font: inherit; padding: 10px 12px; min-width: 0; }
+.field:focus { outline: 0; border-color: var(--ink); }
+
+/* Gastos */
+.card.list { overflow: hidden; }
+.rows { padding: 0 16px; }
+.exp { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
+.exp:first-child { border-top: 0; }
+.e-name { flex: 1 1 11rem; }
+.exp .money { flex: 0 1 10rem; }
+.e-payer { flex: 0 1 9.5rem; }
+.icon-btn { width: 40px; height: 40px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; flex: none; }
+.icon-btn:hover { background: var(--surface-2); color: var(--ink); }
+.actions { padding: 0 16px 14px; }
+.btn { min-height: 44px; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; }
+.btn:hover { background: var(--surface-2); }
+.btn-primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn-primary:hover { background: var(--ink); opacity: .88; }
+.totalrow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; background: var(--surface-2); border-top: 1px solid var(--line); }
+.totalrow strong { font: 700 1.25rem var(--font-display); font-variant-numeric: tabular-nums; }
+
+/* Resultado */
+.hero { padding: 20px; background: var(--surface-2); border-radius: 12px; display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--muted); margin: 0; }
+.big { font-family: var(--font-display); font-weight: 700; font-size: clamp(3rem, 14vw, 4.75rem); line-height: 1; letter-spacing: -0.03em; margin: 0; font-variant-numeric: tabular-nums; }
+.big span { font-size: .3em; letter-spacing: 0; font-weight: 500; color: var(--muted); margin-left: .3em; }
+.sub { margin: 0; color: var(--muted); font-size: .92rem; font-variant-numeric: tabular-nums; }
+.split { display: flex; gap: 3px; height: 14px; border-radius: 7px; overflow: hidden; margin-top: 10px; }
+.split span { display: block; height: 100%; }
+.seg-a { background: var(--a); }
+.seg-b { background: var(--b); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: .92rem; font-variant-numeric: tabular-nums; }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+
+.res { padding: 16px; display: flex; flex-direction: column; gap: 2px; }
+.amount { font: 700 2rem var(--font-display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-top: 6px; }
+.rowline { display: flex; justify-content: space-between; gap: 12px; font-size: .92rem; padding: 7px 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.rowline:first-of-type { margin-top: 8px; }
+.rowline .v { font-weight: 600; text-align: right; }
+.rowline.strong { font-weight: 600; }
+
+.cmp-title { margin: 8px 0 0; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: .94rem; }
+th, td { padding: 10px 14px; border-top: 1px solid var(--line); text-align: right; vertical-align: top; }
+thead th { border-top: 0; font-weight: 600; }
+th[scope="row"], thead th:first-child { text-align: left; font-weight: 500; color: var(--muted); }
+.empty { margin: 0; padding: 20px; color: var(--muted); }
+
+.copyrow { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.status { color: var(--muted); font-size: .92rem; }
+pre.summary { margin: 0; padding: 14px; background: var(--surface-2); border-radius: 10px; font: .88rem/1.5 var(--font-body); white-space: pre-wrap; user-select: all; }
+
+:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
+.name-input:focus-visible, .money input:focus-visible, .field:focus-visible { outline: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+html { color-scheme: light; }
+body { margin: 0; padding-top: calc(28px + env(safe-area-inset-top, 0px)); padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px)); }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>Cuentas en pareja</h1>
+    <p class="lede">Cada uno aporta el mismo porcentaje de su sueldo. Ese porcentaje sale de dividir los gastos en común por la suma de los dos sueldos: quien cobra menos pone menos pesos, y a los dos les pesa igual.</p>
+  </header>
+
+  <div id="example-note" class="note" role="status">
+    <span>Estás viendo datos de ejemplo.</span>
+    <button type="button" class="linkbtn" id="clear">Empezar de cero</button>
+  </div>
+
+  <section aria-labelledby="h-sueldos">
+    <h2 id="h-sueldos">Sueldos del mes</h2>
+    <div class="people">
+      <div class="card person">
+        <div class="pname">
+          <span class="dot dot-a"></span>
+          <input id="name-a" class="name-input" aria-label="Nombre de la primera persona" placeholder="Persona 1" maxlength="24" autocomplete="off">
+        </div>
+        <label class="lbl" for="inc-a">Sueldo mensual</label>
+        <div class="money"><span>$</span><input id="inc-a" inputmode="decimal" autocomplete="off" placeholder="0"></div>
+      </div>
+      <div class="card person">
+        <div class="pname">
+          <span class="dot dot-b"></span>
+          <input id="name-b" class="name-input" aria-label="Nombre de la segunda persona" placeholder="Persona 2" maxlength="24" autocomplete="off">
+        </div>
+        <label class="lbl" for="inc-b">Sueldo mensual</label>
+        <div class="money"><span>$</span><input id="inc-b" inputmode="decimal" autocomplete="off" placeholder="0"></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-gastos">
+    <h2 id="h-gastos">Gastos en común</h2>
+    <p class="hint">Elegí quién paga cada gasto. Si uno lo paga directo, se descuenta de lo que le toca poner.</p>
+    <div class="card list">
+      <div class="rows" id="expenses"></div>
+      <div class="actions"><button type="button" class="btn" id="add">+ Agregar gasto</button></div>
+      <div class="totalrow"><span>Total de gastos</span><strong id="total">$ 0</strong></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-resultado">
+    <h2 id="h-resultado">Resultado</h2>
+    <div id="result"></div>
+    <div class="copyrow">
+      <button type="button" class="btn btn-primary" id="copy">Copiar resumen</button>
+      <span class="status" id="status"></span>
+    </div>
+    <pre class="summary" id="summary" hidden></pre>
+  </section>
+</main>
+<script>
+(function () {
+  'use strict';
+  var KEY = 'cuentas-pareja-v1';
+  var nf = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
+
+  function money(n) { var r = Math.round(n); return (r < 0 ? '−$ ' : '$ ') + nf.format(Math.abs(r)); }
+  function pct(x) { return nf.format(Math.round(x * 10000) / 100); }
+  function num(v) { v = Number(v); return isFinite(v) && v > 0 ? v : 0; }
+  function parseNum(s) {
+    s = String(s).replace(/[^\d.,]/g, '');
+    if (s.indexOf(',') !== -1) s = s.replace(/\./g, '').replace(',', '.');
+    else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+    var n = parseFloat(s);
+    return isFinite(n) ? n : 0;
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function $(id) { return document.getElementById(id); }
+
+  function example() {
+    return {
+      example: true,
+      a: { name: 'Vos', income: 1200000 },
+      b: { name: 'Tu pareja', income: 800000 },
+      next: 6,
+      expenses: [
+        { id: 1, name: 'Alquiler', amount: 450000, payer: 'a' },
+        { id: 2, name: 'Expensas', amount: 60000, payer: 'common' },
+        { id: 3, name: 'Luz, gas y agua', amount: 90000, payer: 'common' },
+        { id: 4, name: 'Supermercado', amount: 300000, payer: 'common' },
+        { id: 5, name: 'Internet y celular', amount: 25000, payer: 'common' }
+      ]
+    };
+  }
+  function valid(s) { return s && s.a && s.b && Array.isArray(s.expenses) && typeof s.next === 'number'; }
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) { var s = JSON.parse(raw); if (valid(s)) return s; }
+    } catch (e) {}
+    return example();
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  var state = load();
+
+  function nameOf(w) {
+    var n = String(state[w].name || '').trim();
+    return n || (w === 'a' ? 'Persona 1' : 'Persona 2');
+  }
+
+  function compute() {
+    var A = num(state.a.income), B = num(state.b.income), S = A + B;
+    var T = 0, pa = 0, pb = 0;
+    state.expenses.forEach(function (x) {
+      var v = num(x.amount);
+      T += v;
+      if (x.payer === 'a') pa += v; else if (x.payer === 'b') pb += v;
+    });
+    T = Math.round(T); pa = Math.round(pa); pb = Math.round(pb);
+    var sa = S > 0 ? Math.round(T * A / S) : 0;
+    var sb = S > 0 ? T - sa : 0;
+    return { A: A, B: B, S: S, T: T, p: S > 0 ? T / S : 0, sa: sa, sb: sb, pa: pa, pb: pb, da: sa - pa, db: sb - pb, any: (pa + pb) > 0 };
+  }
+
+  function line(k, v, strong) {
+    return '<div class="rowline' + (strong ? ' strong' : '') + '"><span>' + k + '</span><span class="v">' + v + '</span></div>';
+  }
+
+  function personCard(w, c) {
+    var inc = w === 'a' ? c.A : c.B;
+    var share = w === 'a' ? c.sa : c.sb;
+    var paid = w === 'a' ? c.pa : c.pb;
+    var dep = w === 'a' ? c.da : c.db;
+    var h = '<div class="card res"><div class="pname"><span class="dot dot-' + w + '"></span><strong>' + esc(nameOf(w)) + '</strong></div>';
+    h += '<div class="amount">' + money(share) + '</div><div class="muted small">aporta por mes</div>';
+    h += line('Sueldo', money(inc));
+    h += line('Le queda libre', money(inc - share));
+    if (c.any) {
+      h += line('Ya pagó directo', money(paid));
+      h += dep >= 0 ? line('Falta poner en la cuenta común', money(dep), true)
+                    : line('A favor, se lo devuelven', money(-dep), true);
+    }
+    return h + '</div>';
+  }
+
+  function compare(c) {
+    var half = Math.round(c.T / 2);
+    function pc(inc) { return inc > 0 ? pct(half / inc) + ' %' : '—'; }
+    function sg(d) { var r = Math.round(d); return (r > 0 ? '+' : '') + money(r); }
+    var h = '<h3 class="cmp-title hint"><strong>Y si pusieran mitad y mitad</strong></h3>';
+    h += '<div class="card tablewrap"><table><thead><tr><th></th><th>' + esc(nameOf('a')) + '</th><th>' + esc(nameOf('b')) + '</th></tr></thead><tbody>';
+    h += '<tr><th scope="row">Proporcional</th><td>' + money(c.sa) + '</td><td>' + money(c.sb) + '</td></tr>';
+    h += '<tr><th scope="row">50/50</th><td>' + money(half) + '</td><td>' + money(half) + '</td></tr>';
+    h += '<tr><th scope="row">50/50, % del sueldo</th><td>' + pc(c.A) + '</td><td>' + pc(c.B) + '</td></tr>';
+    h += '<tr><th scope="row">Diferencia</th><td>' + sg(half - c.sa) + '</td><td>' + sg(half - c.sb) + '</td></tr>';
+    h += '</tbody></table></div>';
+    if (c.A > 0 && c.B > 0) {
+      h += '<p class="hint">Con 50/50 los gastos se llevan ' + pct(half / c.A) + ' % del sueldo de ' + esc(nameOf('a')) + ' y ' + pct(half / c.B) + ' % del de ' + esc(nameOf('b')) + ', en vez de ' + pct(c.p) + ' % para cada uno. La diferencia con signo + es lo que pondría de más.</p>';
+    }
+    return h;
+  }
+
+  function render(c) {
+    if (c.S <= 0) return '<div class="card"><p class="empty">Cargá los dos sueldos para ver cuánto aporta cada uno.</p></div>';
+    if (c.T <= 0) return '<div class="card"><p class="empty">Cargá al menos un gasto para ver el porcentaje.</p></div>';
+    var pa = c.sa / c.T * 100, pb = 100 - pa;
+    var h = '';
+    if (c.p > 1) h += '<div class="note warn" role="alert">Los gastos superan a los dos sueldos juntos.</div>';
+    h += '<div class="hero"><p class="eyebrow">Aporte de cada uno</p>';
+    h += '<p class="big">' + pct(c.p) + '<span>% del sueldo</span></p>';
+    h += '<p class="sub">Gastos ' + money(c.T) + ' ÷ sueldos juntos ' + money(c.S) + '</p>';
+    h += '<div class="split" role="img" aria-label="Reparto de los gastos entre las dos personas"><span class="seg-a" style="width:' + pa + '%"></span><span class="seg-b" style="width:' + pb + '%"></span></div>';
+    h += '<div class="legend"><span><i class="dot dot-a"></i>' + esc(nameOf('a')) + ' ' + money(c.sa) + '</span><span><i class="dot dot-b"></i>' + esc(nameOf('b')) + ' ' + money(c.sb) + '</span></div></div>';
+    h += '<div class="people">' + personCard('a', c) + personCard('b', c) + '</div>';
+    h += compare(c);
+    return h;
+  }
+
+  function summary() {
+    var c = compute();
+    if (c.S <= 0 || c.T <= 0) return '';
+    var L = [];
+    L.push('Cuentas en pareja');
+    L.push('Gastos en común: ' + money(c.T));
+    L.push('Sueldos: ' + nameOf('a') + ' ' + money(c.A) + ' y ' + nameOf('b') + ' ' + money(c.B));
+    L.push('Cada uno aporta el ' + pct(c.p) + ' % de su sueldo.');
+    L.push(nameOf('a') + ': ' + money(c.sa));
+    L.push(nameOf('b') + ': ' + money(c.sb));
+    if (c.any) {
+      L.push('');
+      L.push('Para la cuenta común:');
+      L.push(nameOf('a') + (c.da >= 0 ? ' pone ' + money(c.da) : ' tiene a favor ' + money(-c.da)));
+      L.push(nameOf('b') + (c.db >= 0 ? ' pone ' + money(c.db) : ' tiene a favor ' + money(-c.db)));
+    }
+    return L.join('\n');
+  }
+
+  function update() {
+    var c = compute();
+    $('total').textContent = money(c.T);
+    $('result').innerHTML = render(c);
+    save();
+  }
+
+  function optionsHtml(sel) {
+    return '<option value="common"' + (sel === 'common' ? ' selected' : '') + '>Cuenta común</option>' +
+      '<option value="a"' + (sel === 'a' ? ' selected' : '') + '>Paga ' + esc(nameOf('a')) + '</option>' +
+      '<option value="b"' + (sel === 'b' ? ' selected' : '') + '>Paga ' + esc(nameOf('b')) + '</option>';
+  }
+  function updateSelects() {
+    var sels = document.querySelectorAll('.e-payer');
+    for (var i = 0; i < sels.length; i++) {
+      var o = sels[i].options;
+      o[1].textContent = 'Paga ' + nameOf('a');
+      o[2].textContent = 'Paga ' + nameOf('b');
+    }
+  }
+  function renderExpenses() {
+    var h = '';
+    state.expenses.forEach(function (x) {
+      h += '<div class="exp" data-id="' + x.id + '">' +
+        '<input class="field e-name" id="en-' + x.id + '" aria-label="Nombre del gasto" placeholder="Gasto" autocomplete="off" value="' + esc(x.name) + '">' +
+        '<div class="money"><span>$</span><input class="e-amt" id="ea-' + x.id + '" inputmode="decimal" aria-label="Monto del gasto" placeholder="0" autocomplete="off" value="' + (x.amount > 0 ? nf.format(x.amount) : '') + '"></div>' +
+        '<select class="field e-payer" id="ep-' + x.id + '" aria-label="Quién lo paga">' + optionsHtml(x.payer) + '</select>' +
+        '<button type="button" class="icon-btn e-del" aria-label="Quitar gasto"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg></button>' +
+        '</div>';
+    });
+    $('expenses').innerHTML = h;
+  }
+
+  function touched() {
+    if (state.example) { state.example = false; $('example-note').hidden = true; }
+  }
+  function findExp(el) {
+    var row = el.closest ? el.closest('.exp') : null;
+    if (!row) return null;
+    var id = Number(row.getAttribute('data-id'));
+    for (var i = 0; i < state.expenses.length; i++) if (state.expenses[i].id === id) return state.expenses[i];
+    return null;
+  }
+
+  // Nombres y sueldos
+  ['a', 'b'].forEach(function (w) {
+    var n = $('name-' + w), inc = $('inc-' + w);
+    n.addEventListener('input', function () { touched(); state[w].name = n.value; updateSelects(); update(); });
+    inc.addEventListener('input', function () { touched(); state[w].income = parseNum(inc.value); update(); });
+    inc.addEventListener('blur', function () { inc.value = state[w].income > 0 ? nf.format(state[w].income) : ''; });
+  });
+
+  // Gastos
+  var list = $('expenses');
+  list.addEventListener('input', function (e) {
+    var x = findExp(e.target); if (!x) return;
+    touched();
+    if (e.target.classList.contains('e-name')) x.name = e.target.value;
+    else if (e.target.classList.contains('e-amt')) x.amount = parseNum(e.target.value);
+    update();
+  });
+  list.addEventListener('change', function (e) {
+    var x = findExp(e.target); if (!x) return;
+    if (e.target.classList.contains('e-payer')) { touched(); x.payer = e.target.value; update(); }
+  });
+  list.addEventListener('focusout', function (e) {
+    if (!e.target.classList.contains('e-amt')) return;
+    var x = findExp(e.target); if (!x) return;
+    e.target.value = x.amount > 0 ? nf.format(x.amount) : '';
+  });
+  list.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.e-del') : null;
+    if (!btn) return;
+    var x = findExp(btn); if (!x) return;
+    touched();
+    state.expenses = state.expenses.filter(function (y) { return y !== x; });
+    renderExpenses(); update();
+  });
+  $('add').addEventListener('click', function () {
+    touched();
+    var id = state.next++;
+    state.expenses.push({ id: id, name: '', amount: 0, payer: 'common' });
+    renderExpenses(); update();
+    var el = $('en-' + id); if (el) el.focus();
+  });
+
+  $('clear').addEventListener('click', function () {
+    state.example = false;
+    state.a.income = 0; state.b.income = 0;
+    state.expenses = [{ id: state.next++, name: '', amount: 0, payer: 'common' }];
+    $('example-note').hidden = true;
+    sync();
+  });
+
+  // Copiar resumen
+  function setStatus(t) { $('status').textContent = t; }
+  $('copy').addEventListener('click', function () {
+    var t = summary();
+    var pre = $('summary');
+    pre.hidden = true;
+    if (!t) { setStatus('Cargá los sueldos y los gastos primero.'); return; }
+    function fallback() {
+      var ok = false;
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = t; ta.setAttribute('readonly', '');
+        ta.style.cssText = 'position:fixed;top:0;opacity:0';
+        document.body.appendChild(ta); ta.select();
+        ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch (e) {}
+      if (ok) setStatus('Resumen copiado.');
+      else { setStatus('No se pudo copiar. Copialo desde acá abajo.'); pre.textContent = t; pre.hidden = false; }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t).then(function () { setStatus('Resumen copiado.'); }, fallback);
+    } else fallback();
+  });
+
+  function sync() {
+    $('name-a').value = state.a.name || '';
+    $('name-b').value = state.b.name || '';
+    $('inc-a').value = state.a.income > 0 ? nf.format(state.a.income) : '';
+    $('inc-b').value = state.b.income > 0 ? nf.format(state.b.income) : '';
+    $('example-note').hidden = !state.example;
+    renderExpenses();
+    update();
+  }
+  sync();
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+CUENTAS EN PAREJA
+=================
+
+Calculadora para que cada uno aporte el mismo porcentaje de su sueldo a los gastos en común.
+No usa internet ni librerías externas. Los datos se guardan solo en el navegador de cada dispositivo.
+
+Archivos
+  index.html            la app completa
+  manifest.webmanifest  datos para instalarla como app
+  sw.js                 permite abrirla sin conexión
+  icon-192.png, icon-512.png   íconos
+
+OPCIÓN 1: usarla ya, sin subir nada
+  Abrí index.html con doble clic. Funciona sin conexión, pero no se instala como app.
+
+OPCIÓN 2: subirla a GitHub Pages (gratis) e instalarla en el celular
+  1. Entrá a github.com, creá una cuenta si no tenés y tocá "New repository".
+     Ponele un nombre (por ejemplo cuentas-pareja) y dejalo en Public.
+  2. En el repositorio, "Add file" > "Upload files". Arrastrá los 5 archivos
+     (descomprimidos, no el .zip) y tocá "Commit changes".
+  3. Andá a Settings > Pages. En "Source" elegí "Deploy from a branch",
+     rama main, carpeta / (root), y tocá Save.
+  4. A los 1 o 2 minutos, la app queda en:
+     https://TU-USUARIO.github.io/cuentas-pareja/
+  5. Abrí ese link en el celular.
+     Android (Chrome): menú de los tres puntos > "Instalar app" o "Agregar a la pantalla principal".
+     iPhone (Safari): botón Compartir > "Agregar a inicio".
+  Después de la primera vez abre sin internet.
+
+Cambios futuros
+  Si modificás index.html y lo volvés a subir, cambiá 'cuentas-pareja-v1' por
+  'cuentas-pareja-v2' en sw.js para que los dispositivos tomen la versión nueva.
